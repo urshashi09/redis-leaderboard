@@ -1,117 +1,204 @@
-# 🏆 High-Performance Redis Leaderboard API
+# High-Performance Redis Leaderboard API
 
-A robust, real-time gaming leaderboard system built with **Node.js**, **Express**, and **Redis**. This project demonstrates how to leverage Redis Sorted Sets for low-latency rankings and Hashes for player metadata, capable of handling millions of players with sub-millisecond response times.
-
----
-
-## 🚀 Features
-
-- **Real-Time Rankings**: Instant updates using Redis `ZSET` (Sorted Sets).
-- **Player Metadata**: Detailed player profiles (country, tier, avatar) stored in Redis `HASH`.
-- **Advanced Querying**:
-  - Top N players retrieval.
-  - Rank-based pagination (e.g., ranks 50-100).
-  - Score range filtering.
-- **Traffic Simulator**: A live CLI tool to simulate concurrent player score updates.
-- **Health Monitoring**: Built-in endpoint to monitor API and Redis connectivity.
-- **Seeding Script**: Quick setup with high-quality sample data.
+A real-time gaming leaderboard API built with **Node.js**, **Express**, and **Redis**. It uses Redis Sorted Sets for fast ranking operations and Redis Hashes for player metadata.
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: Redis (via `ioredis`)
-- **Environment**: `dotenv` for configuration
-- **CORS**: Enabled for cross-origin frontend integration
-
----
-
-## 📋 Prerequisites
-
-- **Node.js** (v16+)
-- **Redis Server** (Local or Cloud)
-- **npm** or **yarn**
+- **Real-time rankings** using Redis `ZSET` sorted sets.
+- **Player metadata** such as country, tier, avatar, and join time stored in Redis hashes.
+- **Leaderboard queries** for top players, rank ranges, and score ranges.
+- **Player management** endpoints for creating, updating, incrementing, deleting, and resetting data.
+- **Health check** endpoint for API and Redis status.
+- **Seed script** for loading sample players.
+- **Traffic simulator** for live score updates.
+- **Docker support** with API and Redis services.
 
 ---
 
-## ⚙️ Installation & Setup
+## Tech Stack
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd leaderboard
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment**:
-   Create a `.env` file in the root directory:
-   ```env
-   PORT=3000
-   REDIS_URL=redis://localhost:6379
-   LEADERBOARD_KEY=game:leaderboard
-   PLAYER_META_PREFIX=player:meta:
-   ```
-
-4. **Seed the database**:
-   Initialize the leaderboard with sample players:
-   ```bash
-   node seed.js
-   ```
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** Redis via `ioredis`
+- **Configuration:** `dotenv`
+- **CORS:** Enabled for frontend integration
+- **Containers:** Docker and Docker Compose
 
 ---
 
-## 🏃 Running the Project
+## Prerequisites
 
-### Start the API Server
+For local development:
+
+- Node.js v16 or newer
+- npm
+- Redis server running locally or remotely
+
+For Docker:
+
+- Docker
+- Docker Compose
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the project root when running locally:
+
+```env
+PORT=3000
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+LEADERBOARD_KEY=game:leaderboard
+PLAYER_META_PREFIX=player:meta:
+```
+
+The app currently reads `REDIS_HOST` and `REDIS_PORT`.
+
+---
+
+## Local Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start Redis locally, then seed the leaderboard:
+
+```bash
+npm run seed
+```
+
+Start the API server:
+
 ```bash
 npm start
 ```
-The server will run at `http://localhost:3000`.
 
-### Run the Live Simulator
-Watch the leaderboard change in real-time with randomized traffic:
+The API will be available at:
+
+```text
+http://localhost:3000
+```
+
+Run the live simulator:
+
 ```bash
-node simulator.js
+npm run simulate
 ```
 
 ---
 
-## 📡 API Reference
+## Docker Setup
 
-### Health & Status
+Build and start the API plus Redis:
+
+```bash
+docker compose up --build
+```
+
+The API will be available at:
+
+```text
+http://localhost:3000
+```
+
+Seed the Docker Redis instance:
+
+```bash
+docker compose exec api npm run seed
+```
+
+Run the simulator inside the API container:
+
+```bash
+docker compose exec api npm run simulate
+```
+
+Stop the containers:
+
+```bash
+docker compose down
+```
+
+Stop the containers and remove the Redis volume:
+
+```bash
+docker compose down -v
+```
+
+The Docker Compose setup uses:
+
+- `redis`: Redis 7.2 Alpine with append-only persistence.
+- `api`: Node.js API container connected to Redis using `REDIS_HOST=redis`.
+- `redis_data`: Docker volume for Redis data.
+
+---
+
+## API Reference
+
+### Health
+
 - `GET /health` - Returns API and Redis connection status.
 
-### Leaderboard Operations
-- `GET /api/leaderboard` - Get top players.
-  - Query params: `limit` (default 10).
-- `GET /api/leaderboard?from=1&to=10` - Get players within a specific rank range.
-- `GET /api/leaderboard/score-range?min=1000&max=5000` - Filter players by score.
-- `GET /api/leaderboard/player/:username` - Get stats and metadata for a specific player.
+### Leaderboard
 
-### Updates & Management
-- `POST /api/leaderboard/score` - Set an absolute score for a player.
+- `GET /api/leaderboard` - Get top players.
+  - Query params: `limit` with a default of `10`.
+- `GET /api/leaderboard?from=1&to=10` - Get players within a rank range.
+- `GET /api/leaderboard/score-range?min=1000&max=5000` - Get players within a score range.
+- `GET /api/leaderboard/player/:username` - Get one player's rank, score, and metadata.
+
+### Updates and Management
+
+- `POST /api/leaderboard/score` - Set an absolute score.
   - Body: `{ "username": "Player1", "score": 5000 }`
 - `POST /api/leaderboard/increment` - Increment a player's score.
   - Body: `{ "username": "Player1", "amount": 150 }`
-- `POST /api/leaderboard/player` - Register a new player with metadata.
+- `POST /api/leaderboard/player` - Register a player with optional metadata.
   - Body: `{ "username": "NewPlayer", "score": 0, "country": "US", "tier": "Gold" }`
 - `DELETE /api/leaderboard/player/:username` - Remove a player.
-- `POST /api/leaderboard/reset` - **(Danger)** Clear the entire leaderboard.
+- `POST /api/leaderboard/reset` - Clear the leaderboard.
 
 ---
 
-## 🏗️ Architecture Note
+## Example Requests
 
-- **Sorted Sets (ZSET)**: Used for the leaderboard itself. The `score` is the sort key, and the `username` is the member. This provides $O(\log N)$ complexity for additions and range queries.
-- **Hashes (HASH)**: Used to store non-ranking data like `country`, `tier`, and `joinedAt` timestamps. This keeps the Sorted Set lean and fast.
+Create a player:
+
+```bash
+curl -X POST http://localhost:3000/api/leaderboard/player \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"NewPlayer\",\"score\":0,\"country\":\"US\",\"tier\":\"Gold\"}"
+```
+
+Increment a score:
+
+```bash
+curl -X POST http://localhost:3000/api/leaderboard/increment \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"NewPlayer\",\"amount\":150}"
+```
+
+Fetch the leaderboard:
+
+```bash
+curl http://localhost:3000/api/leaderboard
+```
 
 ---
 
-## 📄 License
-ISC License. Feel free to use this as a template for your own gaming backends!
+## Architecture Notes
+
+- **Sorted Sets (`ZSET`)** store usernames as members and scores as sort values.
+- **Hashes (`HASH`)** store non-ranking data such as country, tier, avatar, and joined timestamp.
+- **Rank queries** use Redis sorted set range operations in descending score order.
+- **Metadata hashes** have a TTL so profile data expires automatically over time.
+
+---
+
+
