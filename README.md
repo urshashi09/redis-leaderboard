@@ -11,6 +11,7 @@ A real-time gaming leaderboard API built with **Node.js**, **Express**, and **Re
 - **Leaderboard queries** for top players, rank ranges, and score ranges.
 - **Player management** endpoints for creating, updating, incrementing, deleting, and resetting data.
 - **Health check** endpoint for API and Redis status.
+- **Rate limiting** on write-heavy player and score endpoints.
 - **Seed script** for loading sample players.
 - **Traffic simulator** for live score updates.
 - **Docker support** with API and Redis services.
@@ -141,6 +142,8 @@ The Docker Compose setup uses:
 
 ## API Reference
 
+Write-heavy endpoints are rate-limited to 30 requests per IP per minute.
+
 ### Health
 
 - `GET /health` - Returns API and Redis connection status.
@@ -155,11 +158,11 @@ The Docker Compose setup uses:
 
 ### Updates and Management
 
-- `POST /api/leaderboard/score` - Set an absolute score.
+- `POST /api/leaderboard/score` - Set an absolute score. Rate-limited.
   - Body: `{ "username": "Player1", "score": 5000 }`
-- `POST /api/leaderboard/increment` - Increment a player's score.
+- `POST /api/leaderboard/increment` - Increment a player's score. Rate-limited.
   - Body: `{ "username": "Player1", "amount": 150 }`
-- `POST /api/leaderboard/player` - Register a player with optional metadata.
+- `POST /api/leaderboard/player` - Register a player with optional metadata. Rate-limited.
   - Body: `{ "username": "NewPlayer", "score": 0, "country": "US", "tier": "Gold" }`
 - `DELETE /api/leaderboard/player/:username` - Remove a player.
 - `POST /api/leaderboard/reset` - Clear the leaderboard.
