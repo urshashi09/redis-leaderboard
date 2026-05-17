@@ -201,4 +201,4 @@ curl http://localhost:3000/api/leaderboard
 
 ---
 
-
+Feel free to use this as a template for your own gaming backends!
