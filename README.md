@@ -4,14 +4,18 @@ A real-time gaming leaderboard API built with Node.js, Express, and Redis. It us
 
 ## Features
 
-- Real-time leaderboard rankings with Redis `ZSET`
-- Player metadata storage with Redis `HASH`
-- Top-N, rank range, and score range queries
-- Score update and increment endpoints
-- Request rate limiting for write-heavy endpoints
-- Health endpoint for API and Redis status
-- Swagger UI API documentation at `/api-docs`
-- Seed and simulator scripts for local testing
+- **Real-time rankings** using Redis `ZSET` sorted sets.
+- **Player metadata** such as country, tier, avatar, and join time stored in Redis hashes.
+- **Leaderboard queries** for top players, rank ranges, and score ranges.
+- **Player management** endpoints for creating, updating, incrementing, deleting, and resetting data.
+- **Health check** endpoint for API and Redis status.
+- **Rate limiting** on write-heavy player and score endpoints.
+- **Seed script** for loading sample players.
+- **Traffic simulator** for live score updates.
+- **Docker support** with API and Redis services.
+- **API documentation** with Swagger UI and OpenAPI spec generation.
+
+---
 
 ## Tech Stack
 
