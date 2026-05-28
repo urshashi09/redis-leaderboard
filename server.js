@@ -3,6 +3,7 @@ require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
 
+
 const redisClient = require("./src/redisclient");
 const leaderboardRoutes = require("./src/routes/leaderboard");
 
@@ -11,6 +12,17 @@ const port = Number.parseInt(process.env.PORT, 10) || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+
+
+const swaggerUi = require('swagger-ui-express');
+
+let swaggerDocument = {};
+try {
+    swaggerDocument = require('./swagger-output.json');
+} catch (error) {
+    console.error("error in loading swagger document: ", error)
+}
 
 // Health endpoint for API + Redis status.
 app.get("/health", async (_req, res) => {
@@ -32,6 +44,7 @@ app.get("/health", async (_req, res) => {
 });
 
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use((req, res) => {
   res.status(404).json({
@@ -53,6 +66,7 @@ async function startServer() {
     console.log(`Server: http://localhost:${port}`);
     console.log("Health: GET /health");
     console.log("Leaderboard: GET /api/leaderboard");
+    console.log(`Swagger docs is available at http://localhost:${port}/api-docs`);
   });
 }
 

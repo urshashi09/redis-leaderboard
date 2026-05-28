@@ -1,51 +1,40 @@
 # High-Performance Redis Leaderboard API
 
-A real-time gaming leaderboard API built with **Node.js**, **Express**, and **Redis**. It uses Redis Sorted Sets for fast ranking operations and Redis Hashes for player metadata.
-
----
+A real-time gaming leaderboard API built with Node.js, Express, and Redis. It uses Redis Sorted Sets for ranking operations and Redis Hashes for player metadata.
 
 ## Features
 
-- **Real-time rankings** using Redis `ZSET` sorted sets.
-- **Player metadata** such as country, tier, avatar, and join time stored in Redis hashes.
-- **Leaderboard queries** for top players, rank ranges, and score ranges.
-- **Player management** endpoints for creating, updating, incrementing, deleting, and resetting data.
-- **Health check** endpoint for API and Redis status.
-- **Seed script** for loading sample players.
-- **Traffic simulator** for live score updates.
-- **Docker support** with API and Redis services.
-
----
+- Real-time leaderboard rankings with Redis `ZSET`
+- Player metadata storage with Redis `HASH`
+- Top-N, rank range, and score range queries
+- Score update and increment endpoints
+- Request rate limiting for write-heavy endpoints
+- Health endpoint for API and Redis status
+- Swagger UI API documentation at `/api-docs`
+- Seed and simulator scripts for local testing
 
 ## Tech Stack
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** Redis via `ioredis`
-- **Configuration:** `dotenv`
-- **CORS:** Enabled for frontend integration
-- **Containers:** Docker and Docker Compose
-
----
+- Node.js
+- Express
+- Redis with `ioredis`
+- Swagger UI with `swagger-ui-express`
+- Swagger spec generation with `swagger-autogen`
+- CORS and dotenv
 
 ## Prerequisites
 
-For local development:
-
 - Node.js v16 or newer
+- Redis server running locally, in Docker, or remotely
 - npm
-- Redis server running locally or remotely
 
-For Docker:
+## Installation
 
-- Docker
-- Docker Compose
+```bash
+npm install
+```
 
----
-
-## Environment Variables
-
-Create a `.env` file in the project root when running locally:
+Create a `.env` file in the project root:
 
 ```env
 PORT=3000
@@ -55,23 +44,7 @@ LEADERBOARD_KEY=game:leaderboard
 PLAYER_META_PREFIX=player:meta:
 ```
 
-The app currently reads `REDIS_HOST` and `REDIS_PORT`.
-
----
-
-## Local Setup
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start Redis locally, then seed the leaderboard:
-
-```bash
-npm run seed
-```
+## Running
 
 Start the API server:
 
@@ -79,21 +52,111 @@ Start the API server:
 npm start
 ```
 
-The API will be available at:
+The server runs at:
 
 ```text
 http://localhost:3000
 ```
 
-Run the live simulator:
+Health check:
+
+```text
+GET http://localhost:3000/health
+```
+
+Swagger UI:
+
+```text
+http://localhost:3000/api-docs
+```
+
+## Swagger
+
+The generated OpenAPI/Swagger spec lives in:
+
+```text
+swagger-output.json
+```
+
+Swagger UI is mounted in `server.js`:
+
+```text
+GET /api-docs
+```
+
+If API routes change, regenerate the Swagger output with:
+
+```bash
+node swagger.js
+```
+
+Then restart the server.
+
+## Seed Data
+
+Initialize Redis with sample leaderboard data:
+
+```bash
+npm run seed
+```
+
+## Simulator
+
+Run the live traffic simulator:
 
 ```bash
 npm run simulate
 ```
 
----
+## API Reference
 
-## Docker Setup
+### Health
+
+- `GET /health` - Returns API and Redis connection status.
+
+### Leaderboard
+
+- `GET /api/leaderboard` - Get top players.
+- `GET /api/leaderboard?limit=10` - Get top players with a custom limit.
+- `GET /api/leaderboard?from=1&to=10` - Get players within a rank range.
+- `GET /api/leaderboard/score-range?min=1000&max=5000` - Get players within a score range.
+- `GET /api/leaderboard/player/:username` - Get one player's rank, score, and metadata.
+
+### Management
+
+- `POST /api/leaderboard/player` - Create a player.
+
+```json
+{
+  "username": "NewPlayer",
+  "score": 0,
+  "country": "US",
+  "tier": "Gold"
+}
+```
+
+- `POST /api/leaderboard/score` - Set a player's absolute score.
+
+```json
+{
+  "username": "Player1",
+  "score": 5000
+}
+```
+
+- `POST /api/leaderboard/increment` - Increment a player's score.
+
+```json
+{
+  "username": "Player1",
+  "amount": 150
+}
+```
+
+- `DELETE /api/leaderboard/player/:username` - Remove a player.
+- `POST /api/leaderboard/reset` - Clear the leaderboard.
+
+## Docker Compose
 
 Build and start the API plus Redis:
 
@@ -137,68 +200,9 @@ The Docker Compose setup uses:
 - `api`: Node.js API container connected to Redis using `REDIS_HOST=redis`.
 - `redis_data`: Docker volume for Redis data.
 
----
-
-## API Reference
-
-### Health
-
-- `GET /health` - Returns API and Redis connection status.
-
-### Leaderboard
-
-- `GET /api/leaderboard` - Get top players.
-  - Query params: `limit` with a default of `10`.
-- `GET /api/leaderboard?from=1&to=10` - Get players within a rank range.
-- `GET /api/leaderboard/score-range?min=1000&max=5000` - Get players within a score range.
-- `GET /api/leaderboard/player/:username` - Get one player's rank, score, and metadata.
-
-### Updates and Management
-
-- `POST /api/leaderboard/score` - Set an absolute score.
-  - Body: `{ "username": "Player1", "score": 5000 }`
-- `POST /api/leaderboard/increment` - Increment a player's score.
-  - Body: `{ "username": "Player1", "amount": 150 }`
-- `POST /api/leaderboard/player` - Register a player with optional metadata.
-  - Body: `{ "username": "NewPlayer", "score": 0, "country": "US", "tier": "Gold" }`
-- `DELETE /api/leaderboard/player/:username` - Remove a player.
-- `POST /api/leaderboard/reset` - Clear the leaderboard.
-
----
-
-## Example Requests
-
-Create a player:
-
-```bash
-curl -X POST http://localhost:3000/api/leaderboard/player \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"NewPlayer\",\"score\":0,\"country\":\"US\",\"tier\":\"Gold\"}"
-```
-
-Increment a score:
-
-```bash
-curl -X POST http://localhost:3000/api/leaderboard/increment \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"NewPlayer\",\"amount\":150}"
-```
-
-Fetch the leaderboard:
-
-```bash
-curl http://localhost:3000/api/leaderboard
-```
-
----
-
 ## Architecture Notes
 
-- **Sorted Sets (`ZSET`)** store usernames as members and scores as sort values.
-- **Hashes (`HASH`)** store non-ranking data such as country, tier, avatar, and joined timestamp.
-- **Rank queries** use Redis sorted set range operations in descending score order.
-- **Metadata hashes** have a TTL so profile data expires automatically over time.
-
----
-
-Feel free to use this as a template for your own gaming backends!
+- Redis Sorted Sets store leaderboard scores. The username is the member and the score is the sort value.
+- Redis Hashes store player metadata such as country, tier, avatar, and join timestamp.
+- Player metadata expires after 15 days.
+- Write endpoints are rate-limited to reduce accidental write spikes.
